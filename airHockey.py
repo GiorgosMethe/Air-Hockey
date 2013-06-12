@@ -115,6 +115,29 @@ def draw_score():
     DrawDigit(score['p1'], WINW/2 + 100, 100, 8, screen, THECOLORS["grey"], 2)
     DrawDigit(score['p2'], WINW/2 - 100, 100, 8, screen, THECOLORS["grey"], 2)
 
+def draw_stuff(balls, space, score, screen):
+    ### Clear screen
+    screen.fill(THECOLORS["white"])
+    ### Draw 
+    draw_table()
+    for ball in balls:
+        p = to_pygame(ball.body.position)
+        if p[0] < 0:
+            score['p1'] += 1
+        if p[0] >WINW:
+            score['p2'] += 1
+
+        if p[0] < 0 or p[0]>WINW:
+            addball()
+            space.remove(ball)
+            balls.remove(ball)
+
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
+
+    pygame.display.flip()
+    pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
+    draw_score()
+
 pygame.init()
 
 screen = pygame.display.set_mode((WINW, WINH))
@@ -159,34 +182,10 @@ mouse_body = pymunk.Body()
 joint1=None
 selected = None
 
-
 # Add the ball
 addball()
 
-### Clear screen
-screen.fill(THECOLORS["white"])
-
-### Draw 
-draw_table()
-
-for ball in balls:
-    p = to_pygame(ball.body.position)
-    if p[0] < 0:
-        score['p1'] += 1
-    if p[0] >WINW:
-        score['p2'] += 1
-
-    if p[0] < 0 or p[0]>WINW:
-        addball()
-        space.remove(ball)
-        balls.remove(ball)
-
-    pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
-
-pygame.display.flip()
-pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
-draw_score()
-
+draw_stuff(balls, space, score, screen)
 
 s.listen(2)
 while 1:
@@ -210,11 +209,9 @@ while 1:
     else:
         sys.exit()
 
-
-
-
 while running:
-
+    for q in connections:
+        q.send("send back movement")   
     mpos = pygame.mouse.get_pos()
     mouse_body.position = from_pygame( Vec2d(mpos) )
     mouse_body.angle = 0

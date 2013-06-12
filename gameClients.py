@@ -6,5 +6,9 @@ port = 5402          # Reserve a port for your service.
 
 s.connect((host, port))
 while 1:
-	print s.recv(1024)
+	data = s.recv(1024)
+	print data
+	if not data:
+		print "server down"
+		break
 s.close                     # Close the socket when done
