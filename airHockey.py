@@ -5,34 +5,13 @@ import pymunk
 from pymunk import Vec2d
 import math, sys, random
 from score import *
-import SocketServer
+import socket               # Import socket module
 
-
-
-class MyTCPHandler(SocketServer.BaseRequestHandler):
-    """
-    The RequestHandler class for our server.
-
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
-
-    def handle(self):
-        print "dsvsdv"
-        # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
-        # just send back the same data, but upper-cased
-        self.request.sendall("ball");
-
-
-HOST, PORT = "10.0.0.86", 9999
-
-# Create the server, binding to localhost on port 9999
-server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
-
-# Activate the server; this will keep running until you
-# interrupt the program with Ctrl-C
+s = socket.socket()         # Create a socket object
+host = socket.gethostname() # Get local machine name
+port = 5402            # Reserve a port for your service.
+s.bind((host, port))        # Bind to the port
+connections = []
 
 WINW=1300
 WINH=700
@@ -110,7 +89,6 @@ def addball():
     mainball.elasticity = 0.95
     space.add(ball_body, mainball)
     balls.append(mainball)
-    # ball_body.apply_impulse((40.0,0.0), (0,0))
 
 def draw_table():
     pygame.draw.rect(screen, THECOLORS["blue"], [[0.0, 0.0], [WINW, wt]], 0)
@@ -161,7 +139,7 @@ for line in static_lines:
     line.group = 1
 space.add(static_lines)
 
-pmass=5
+pmass=3
 pradius=30
 # Setup Player 1
 p1inertia = pymunk.moment_for_circle(pmass, 0, pradius, (0,0))
@@ -177,11 +155,6 @@ p2_body.position=(WINW/8, WINH/2)
 p2_shape = pymunk.Circle(p2_body, pradius, (0,0))
 p2_shape.elasticity = 0.95
 
-space.add(p2_body, p2_shape)
-space.add(p1_body, p1_shape)
-players.append(p1_shape)
-players.append(p2_shape)
-
 mouse_body = pymunk.Body()
 joint1=None
 selected = None
@@ -190,7 +163,55 @@ selected = None
 # Add the ball
 addball()
 
+### Clear screen
+screen.fill(THECOLORS["white"])
+
+### Draw 
+draw_table()
+
+for ball in balls:
+    p = to_pygame(ball.body.position)
+    if p[0] < 0:
+        score['p1'] += 1
+    if p[0] >WINW:
+        score['p2'] += 1
+
+    if p[0] < 0 or p[0]>WINW:
+        addball()
+        space.remove(ball)
+        balls.remove(ball)
+
+    pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
+
+pygame.display.flip()
+pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
 draw_score()
+
+
+s.listen(2)
+while 1:
+    conn, addr = s.accept()
+    connections.append(conn)
+    if len(connections) == 1:
+        space.add(p1_body, p1_shape)
+        players.append(p1_shape)
+        p = to_pygame(p1_body.position)
+        pygame.draw.circle(screen, THECOLORS["darkgreen"], p, int(p1_shape.radius), 0)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
+    elif len(connections) == 2:
+        space.add(p2_body, p2_shape)
+        players.append(p2_shape)
+        p = to_pygame(p2_body.position)
+        pygame.draw.circle(screen, THECOLORS["red"], p, int(p1_shape.radius), 0)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
+        break
+    else:
+        sys.exit()
+
+
+
 
 while running:
 
@@ -265,5 +286,3 @@ while running:
     pygame.display.flip()
     clock.tick(50)
     pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
-        
-server.serve_forever()
