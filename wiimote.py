@@ -38,8 +38,8 @@ class wiimote(object):
     def get_pressed(self):
         button_state = self.__wiimote.state['buttons']
         is_pressed = {}
-        for label, code in CWIID_BUTTONS:
-            is_pressed['label'] = bool(button_state & code)
+        for label, code in CWIID_BUTTONS.items():
+            is_pressed[label] = bool(button_state & code)
         return is_pressed
 
     def get_pos(self):
@@ -121,22 +121,29 @@ class wiimote(object):
         raise RuntimeError("Not appropriate for a Wiimote")
 
 if __name__ == "__main__":
-    raw_input("Press 1+2 on the Wiimote to connect; then press Enter")
-    wm = wiimote("00:25:A0:B3:00:EB")
-    print "Connected!"
-    pygame.init()
-    screen = pygame.display.set_mode((400,400))
-    #screen = pygame.display.get_surface()
     black = (0, 0, 0)
     white = (255, 255, 255)
-    while True:
+    red = (255, 0, 0)
+    screen_width = 400
+    screen_height = 400
+    raw_input("Press 1+2 on the Wiimote to connect; then press Enter")
+    wm = wiimote("00:25:A0:B3:00:EB")
+    print "Connected! Program exits on Wiimote button press."
+    pygame.init()
+    screen = pygame.display.set_mode((screen_width, screen_height))
+
+    def convert_to_screen(pos):
+        return (int(screen_width * pos[0]), int(screen_height * pos[1]))
+
+    while True not in wm.get_pressed().values():
         pos = wm.get_pos()
         if not pos[2]:
+            pygame.draw.circle(screen, red, convert_to_screen(pos), 3, 2)
+            pygame.display.update()
             continue
-        pos = (int(400. * pos[0]), int(400. * pos[1]))
         print pos
         screen.fill(black)
-        pygame.draw.circle(screen, white, pos, 3, 2)
+        pygame.draw.circle(screen, white, convert_to_screen(pos), 3, 2)
         pygame.display.update()
         if pygame.event.get(pygame.QUIT):
             print "Quitting the game"
