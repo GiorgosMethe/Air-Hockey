@@ -1,4 +1,5 @@
 import math
+import sys
 
 import cwiid
 import pygame
@@ -11,29 +12,31 @@ CWIID_BUTTONS = {"1": cwiid.BTN_1, "2": cwiid.BTN_2,
         "down": cwiid.BTN_DOWN, "up": cwiid.BTN_UP,
         "home": cwiid.BTN_HOME}
 
+YES_SYNONYMS = ["t", "true", "1", "y", "yes", "yeah", "yup", "j", "ja"]
+
 
 class wiimote(object):
     IR_X_MAX = float(cwiid.IR_X_MAX)
     IR_Y_MAX = float(cwiid.IR_Y_MAX)
 
-    def __init__(self, macaddr):
+    def __init__(self, macaddr, correct_for_roll=False):
         self.__wiimote = cwiid.Wiimote(macaddr)
         self.__wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_ACC | cwiid.RPT_IR
-        self.is_roll_corrected_pos = False
+        self.correct_for_roll = correct_for_roll
         # for get_rel's history
         self.rel_old_pos = (0, 0) 
         # for getl_pos's history, when no LED is seen
         self.pos_old_pos = (0, 0, False) 
 
-    def roll_corrected_pos(self, is_corrected):
-        old_is_corrected = self.is_roll_corrected_pos
-        self.is_roll_corrected_pos = is_corrected
-        if self.is_roll_corrected_pos:
+    def set_correct_for_roll(self, is_corrected):
+        old_correction = self.correct_for_roll
+        self.correct_for_roll = is_corrected
+        if self.correct_for_roll:
             acc = cwiid.RPT_ACC 
         else:
             acc = 0
         self.__wiimote.rpt_mode = cwiid.RPT_BTN | cwiid.RPT_IR | acc
-        return old_is_corrected
+        return old_correction
 
     def get_pressed(self):
         button_state = self.__wiimote.state['buttons']
@@ -50,33 +53,31 @@ class wiimote(object):
         except ValueError:
             return self.pos_old_pos
 
-        if not self.is_roll_corrected_pos:
-            pos = 1 - ir['pos'][0] / self.IR_X_MAX, ir['pos'][1] / self.IR_Y_MAX
-        else:
+        pos = 1 - ir['pos'][0] / self.IR_X_MAX, ir['pos'][1] / self.IR_Y_MAX
+
+        if self.correct_for_roll:
             acc_x, acc_y, acc_z = state['acc']
+            roll = math.atan2(acc_y, acc_z) * 180. / math.pi
+            # Translate origin of IR image to center...
+            max_x = 0.5
+            max_y = 0.5
+            c_x = pos[0] - max_x
+            c_y = pos[1] - max_y
+            cos_roll = math.cos(-roll)
+            sin_roll = math.sin(-roll)
 
-            roll = math.atan(acc_x / acc_z)
-            if acc_z <= 0:
-                sign = 1 if acc_x > 0 else -1
-                roll += math.pi * sign
-            roll *= -1
-            # center of view is (0,0)
-            max_x = cwiid.IR_X_MAX / 2.
-            max_y = cwiid.IR_Y_MAX / 2.
-            c_x = ir['pos'][0] - max_x
-            c_y = ir['pos'][1] - max_y
-            cos_roll = math.cos(roll)
-            sin_roll = math.sin(roll)
-
+            # ... rotate the IR image... 
             rot_x = cos_roll*c_x - sin_roll*c_y
             rot_y = sin_roll*c_x + cos_roll*c_y
             rot_max_x = cos_roll*max_x - sin_roll*max_y
             rot_max_y = sin_roll*max_x + cos_roll*max_y
 
-            pos = (rot_x + rot_max_x) / rot_max_x, (rot_y + rot_max_y) / rot_max_y
+            # ... and then translate the IR image back.
+            pos = ((rot_x + rot_max_x) / (2 * rot_max_x), 
+                    (rot_y + rot_max_y) / (2 * rot_max_y))
+
         self.pos_old_pos = pos[0], pos[1], False
         return pos[0], pos[1], True
-        return pos
 
     def get_rel(self):
         new_pos = self.get_pos()
@@ -126,8 +127,12 @@ if __name__ == "__main__":
     red = (255, 0, 0)
     screen_width = 400
     screen_height = 400
+    roll_correction = False
+    if len(sys.argv) > 1 and sys.argv[1].lower() in YES_SYNONYMS:
+        roll_correction = True
     raw_input("Press 1+2 on the Wiimote to connect; then press Enter")
-    wm = wiimote("00:25:A0:B3:00:EB")
+    wm = wiimote("00:25:A0:B3:00:EB", roll_correction)
+    #wm.set_correct_for_roll(True)
     print "Connected! Program exits on Wiimote button press."
     pygame.init()
     screen = pygame.display.set_mode((screen_width, screen_height))
