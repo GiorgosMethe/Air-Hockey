@@ -8,13 +8,14 @@ from score import *
 import socket               # Import socket module
 
 s = socket.socket()         # Create a socket object
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 host = socket.gethostname() # Get local machine name
 port = 5402            # Reserve a port for your service.
 s.bind((host, port))        # Bind to the port
 connections = []
 
-WINW=1300
-WINH=700
+WINW=600
+WINH=300
 PI=3.14247
 
 ## Balls
@@ -81,7 +82,7 @@ def from_pygame(p):
 def addball():
     radius=20
     mass=1
-    inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
+    inertia = pymunk.moment_for_circle(mass, 20, radius, (0,0))
     ball_body = pymunk.Body(mass, inertia)
     ball_body.position=(WINW/2,WINH/2)
 
@@ -210,8 +211,16 @@ while 1:
         sys.exit()
 
 while running:
+    i = 0
     for q in connections:
-        q.send("send back movement")   
+        data = str(i)
+        data += "," + str(score['p1']) + "," + str(score['p2'])
+        for ball in balls:
+            data +=  "," + str(int(ball.body.position[0])) + "," + str(int(ball.body.position[1])
+        data += "," + str(int(p1_body.position[0])) + "," + str(int(p1_body.position[1]))
+        data += "," + str(int(p2_body.position[0])) + "," + str(int(p2_body.position[1]))
+        q.send(data) 
+        i += 1
     mpos = pygame.mouse.get_pos()
     mouse_body.position = from_pygame( Vec2d(mpos) )
     mouse_body.angle = 0
@@ -219,6 +228,7 @@ while running:
 
     for event in pygame.event.get():
         if event.type == QUIT:
+            s.close()
             pygame.quit()
             sys.exit()
             running = False
@@ -283,3 +293,4 @@ while running:
     pygame.display.flip()
     clock.tick(50)
     pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
+s.close()
