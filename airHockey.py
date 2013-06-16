@@ -4,7 +4,6 @@ from pygame.color import *
 import pymunk
 from pymunk import Vec2d
 import math, sys, random
-from score import *
 import socket               # Import socket module
 
 print 'Number of arguments:', len(sys.argv), 'arguments.'
@@ -241,29 +240,21 @@ while running:
             mouse_body.position = from_pygame( Vec2d(mpos) )
             mouse_body.angle = 0
             mouse_body.angular_velocity = 0
-            if button == 1:
+            if joint1 is None:
                 p1_body.position = mouse_body.position
                 joint1 = pymunk.PivotJoint(mouse_body, p1_body, (0,0), (0,0) )
                 space.add(joint1)
-            elif button == 2:
-                if joint1 != None:
-                    space.remove(joint1)
-                joint1 = None
-            p1_body.angular_velocity=0
+                p1_body.angular_velocity=0
         elif split_data[0] == "1":
             button = int(split_data[1])
             mpos = (int(split_data[2]), int(split_data[3]))
             mouse_body.position = from_pygame( Vec2d(mpos) )
             mouse_body.angle = 0
             mouse_body.angular_velocity = 0
-            if button == 1:
+            if joint2 is None:
                 p2_body.position = mouse_body.position
                 joint2 = pymunk.PivotJoint(mouse_body, p2_body, (0,0), (0,0) )
                 space.add(joint2)
-            elif button == 2:
-                if joint2 != None:
-                    space.remove(joint2)
-                joint2 = None
             p2_body.angular_velocity=0
         i += 1
 
