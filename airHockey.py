@@ -7,6 +7,16 @@ import math, sys, random
 from score import *
 import socket               # Import socket module
 
+print 'Number of arguments:', len(sys.argv), 'arguments.'
+print 'Argument List:', str(sys.argv)
+
+RENDERING = False
+if len(sys.argv) == 2:
+    if str(sys.argv[1]) == "rendering=true":
+        RENDERING = True
+    if str(sys.argv[1]) == "rendering=false":
+        RENDERING = False
+
 s = socket.socket()         # Create a socket object
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 host = socket.gethostname() # Get local machine name
@@ -140,9 +150,9 @@ def draw_stuff(balls, space, score, screen):
     draw_score()
 
 pygame.init()
-
-screen = pygame.display.set_mode((WINW, WINH))
 clock = pygame.time.Clock()
+if RENDERING:
+    screen = pygame.display.set_mode((WINW, WINH))
 running = True
 
 ### Physics stuff
@@ -181,12 +191,13 @@ p2_shape.elasticity = 0.95
 
 mouse_body = pymunk.Body()
 joint1=None
+joint2=None
 selected = None
 
 # Add the ball
 addball()
-
-draw_stuff(balls, space, score, screen)
+if RENDERING:
+    draw_stuff(balls, space, score, screen)
 
 s.listen(2)
 while 1:
@@ -196,16 +207,18 @@ while 1:
         space.add(p1_body, p1_shape)
         players.append(p1_shape)
         p = to_pygame(p1_body.position)
-        pygame.draw.circle(screen, THECOLORS["darkgreen"], p, int(p1_shape.radius), 0)
-        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
-        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
+        if RENDERING:
+            pygame.draw.circle(screen, THECOLORS["darkgreen"], p, int(p1_shape.radius), 0)
+            pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
+            pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
     elif len(connections) == 2:
         space.add(p2_body, p2_shape)
         players.append(p2_shape)
         p = to_pygame(p2_body.position)
-        pygame.draw.circle(screen, THECOLORS["red"], p, int(p1_shape.radius), 0)
-        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
-        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
+        if RENDERING:
+            pygame.draw.circle(screen, THECOLORS["red"], p, int(p1_shape.radius), 0)
+            pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
+            pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
         break
     else:
         sys.exit()
@@ -216,34 +229,43 @@ while running:
         data = str(i)
         data += "," + str(score['p1']) + "," + str(score['p2'])
         for ball in balls:
-            data +=  "," + str(int(ball.body.position[0])) + "," + str(int(ball.body.position[1])
+            data +=  "," + str(int(ball.body.position[0])) + "," + str(int(ball.body.position[1]))
         data += "," + str(int(p1_body.position[0])) + "," + str(int(p1_body.position[1]))
         data += "," + str(int(p2_body.position[0])) + "," + str(int(p2_body.position[1]))
-        q.send(data) 
+        q.send(data)
+        data = q.recv(1024)
+        split_data = data.split(",")
+        if split_data[0] == "0":
+            button = int(split_data[1])
+            mpos = (int(split_data[2]), int(split_data[3]))
+            mouse_body.position = from_pygame( Vec2d(mpos) )
+            mouse_body.angle = 0
+            mouse_body.angular_velocity = 0
+            if button == 1:
+                p1_body.position = mouse_body.position
+                joint1 = pymunk.PivotJoint(mouse_body, p1_body, (0,0), (0,0) )
+                space.add(joint1)
+            elif button == 2:
+                if joint1 != None:
+                    space.remove(joint1)
+                joint1 = None
+            p1_body.angular_velocity=0
+        elif split_data[0] == "1":
+            button = int(split_data[1])
+            mpos = (int(split_data[2]), int(split_data[3]))
+            mouse_body.position = from_pygame( Vec2d(mpos) )
+            mouse_body.angle = 0
+            mouse_body.angular_velocity = 0
+            if button == 1:
+                p2_body.position = mouse_body.position
+                joint2 = pymunk.PivotJoint(mouse_body, p2_body, (0,0), (0,0) )
+                space.add(joint2)
+            elif button == 2:
+                if joint2 != None:
+                    space.remove(joint2)
+                joint2 = None
+            p2_body.angular_velocity=0
         i += 1
-    mpos = pygame.mouse.get_pos()
-    mouse_body.position = from_pygame( Vec2d(mpos) )
-    mouse_body.angle = 0
-    mouse_body.angular_velocity = 0
-
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            s.close()
-            pygame.quit()
-            sys.exit()
-            running = False
-        elif event.type == KEYDOWN and event.key == K_ESCAPE:
-            running = False
-        elif event.type == MOUSEBUTTONDOWN and event.button == 1: # LMB
-            p1_body.position = mouse_body.position
-            joint1 = pymunk.PivotJoint(mouse_body, p1_body, (0,0), (0,0) )
-            space.add(joint1)
-        elif event.type == MOUSEBUTTONUP:
-            if joint1 != None:
-                space.remove(joint1)
-            joint1 = None
-    
-    p1_body.angular_velocity=0
 
     # check if players are in the opponments' half
     if p1_body.position[0] < WINW / 2 :
@@ -253,10 +275,12 @@ while running:
         p2_body.position[0] = WINW / 2;
   
     ### Clear screen
-    screen.fill(THECOLORS["white"])
+    if RENDERING:
+        screen.fill(THECOLORS["white"])
     
-    ### Draw 
-    draw_table()
+    ### Draw
+    if RENDERING:
+        draw_table()
 
     for ball in balls:
         p = to_pygame(ball.body.position)
@@ -269,28 +293,31 @@ while running:
             addball()
             space.remove(ball)
             balls.remove(ball)
+        if RENDERING:
+            pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
 
-        pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
+    if RENDERING:
+        p = to_pygame(p1_body.position)
+        pygame.draw.circle(screen, THECOLORS["darkgreen"], p, int(p1_shape.radius), 0)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
 
-    p = to_pygame(p1_body.position)
-    pygame.draw.circle(screen, THECOLORS["darkgreen"], p, int(p1_shape.radius), 0)
-    pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
-    pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
+        p = to_pygame(p2_body.position)
+        pygame.draw.circle(screen, THECOLORS["red"], p, int(p1_shape.radius), 0)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
+        pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
 
-    p = to_pygame(p2_body.position)
-    pygame.draw.circle(screen, THECOLORS["red"], p, int(p1_shape.radius), 0)
-    pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius+1), 2)
-    pygame.draw.circle(screen, THECOLORS["black"], p, int(p1_shape.radius/2), 1)
-
-    draw_score()
+        draw_score()
 
     ### Update physics
     dt = 1.0/60.0/5.
     for x in range(5):
         space.step(dt)
     
-    ### Flip screen
-    pygame.display.flip()
     clock.tick(50)
-    pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
+
+    ### Flip screen
+    if RENDERING:
+        pygame.display.flip()
+        pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
 s.close()

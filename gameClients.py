@@ -1,13 +1,16 @@
 import pygame
 from pygame.locals import *
 from pygame.color import *
+from pymunk import Vec2d
 import socket               # Import socket module
+import pymunk
 
 s = socket.socket()         # Create a socket object
 host = socket.gethostname() # Get local machine name
 port = 5402          # Reserve a port for your service.
 
-
+MOUSE = True
+Wii = False
 ## Balls
 balls = []
 
@@ -72,30 +75,25 @@ def draw_table():
     pygame.draw.circle(screen, THECOLORS["grey"], (WINW/2, WINH/2), circrad, 2)
     pygame.draw.arc(screen, THECOLORS["grey"], [[-circrad, WINH/2-circrad], [+circrad,WINH/2+circrad]], 270, 90, 2)
 
+def from_pygame(p):
+    """Small hack to convert pymunk to pygame coordinates"""
+    return int(p.x), int(-p.y+WINH)
+
+def to_pygame(p):
+    """Small hack to convert pymunk to pygame coordinates"""
+    return int(p[0]), int(-p[1]+WINH)
+
 def draw_score():
     DrawDigit(score['p1'], WINW/2 + 100, 100, 8, screen, THECOLORS["grey"], 2)
     DrawDigit(score['p2'], WINW/2 - 100, 100, 8, screen, THECOLORS["grey"], 2)
 
 def draw_stuff(balls, score, screen):
-    ### Clear screen
-    screen.fill(THECOLORS["white"])
+    # screen.fill(THECOLORS["white"])
     ### Draw 
     draw_table()
     for ball in balls:
-        p = to_pygame(ball.body.position)
-        if p[0] < 0:
-            score['p1'] += 1
-        if p[0] >WINW:
-            score['p2'] += 1
-
-        if p[0] < 0 or p[0]>WINW:
-            addball()
-            balls.remove(ball)
-
-        pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
-
-    pygame.display.flip()
-    pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
+        p = ball
+        pygame.draw.circle(screen, THECOLORS["black"], to_pygame(p), int(20), 0)
     draw_score()
 
 pygame.init()
@@ -105,9 +103,6 @@ clock = pygame.time.Clock()
 
 draw_stuff(balls, score, screen)
 
-
-####################################################################
-
 s.connect((host, port))
 while 1:
 	data = s.recv(1024)
@@ -116,12 +111,58 @@ while 1:
 		break
 	else:
 		screen.fill(THECOLORS["white"])
-		# split_data = data.split(",")
-		# print split_data
-		# score['p1'] = int(float(split_data[1]))
-		# score['p2'] = int(float(split_data[2]))
+		split_data = data.split(",")
+		
+        #take the score
+		score['p1'] = int(split_data[1])
+		score['p2'] = int(split_data[2])
 
+        if(len(balls) == 1):
+            balls.pop()
+        #take the ball position
+        balls.append((int(split_data[3]), int(split_data[4])))
 
-		draw_stuff(balls, score, screen)
-		# pygame.display.set_caption("Wii-AWESOME AIR HOCKEY ~ Player:"+ split_data[0])
-s.close                     # Close the socket when done
+        # fraw stuff
+        draw_stuff(balls, score, screen)
+
+        p = to_pygame((int(split_data[5]), int(split_data[6])))
+        pygame.draw.circle(screen, THECOLORS["darkgreen"], p, 30, 0)
+        pygame.draw.circle(screen, THECOLORS["black"], p, 31, 2)
+        pygame.draw.circle(screen, THECOLORS["black"], p, 15, 1)
+        p = to_pygame((int(split_data[7]), int(split_data[8])))
+        pygame.draw.circle(screen, THECOLORS["red"], p, 30, 0)
+        pygame.draw.circle(screen, THECOLORS["black"], p, 31, 2)
+        pygame.draw.circle(screen, THECOLORS["black"], p, 15, 1)
+
+        # draw playes
+        # players positions
+        pygame.display.flip()
+        clock.tick(50)
+
+        if MOUSE:
+            # mouse stuff
+            mouse_body = pymunk.Body()
+            mpos = pygame.mouse.get_pos()
+            mouse_body.angle = 0
+            mouse_body.angular_velocity = 0
+            button = "0";
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    s.close()
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                    s.close()
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == MOUSEBUTTONDOWN:
+                    button = "1";
+                elif event.type == MOUSEBUTTONUP:
+                    button = "2";
+            s.send(split_data[0] + "," + button + "," + str(mpos[0]) + "," + str(mpos[1]))
+
+        if Wii:
+            pass
+
+        # end mouse stuff
+s.close
