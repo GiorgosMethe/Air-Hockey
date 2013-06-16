@@ -6,7 +6,7 @@ import socket               # Import socket module
 import pymunk
 
 s = socket.socket()         # Create a socket object
-host = socket.gethostname() # Get local machine name
+host = "10.42.0.13" # Get local machine name
 port = 5402          # Reserve a port for your service.
 
 MOUSE = True
@@ -14,8 +14,8 @@ Wii = False
 ## Balls
 balls = []
 
-WINW=600
-WINH=300
+WINW=1400
+WINH=800
 # Wall thickness
 wt=20.0
 # Goal width
@@ -134,11 +134,6 @@ while 1:
         pygame.draw.circle(screen, THECOLORS["black"], p, 31, 2)
         pygame.draw.circle(screen, THECOLORS["black"], p, 15, 1)
 
-        # draw playes
-        # players positions
-        pygame.display.flip()
-        clock.tick(50)
-
         if MOUSE:
             # mouse stuff
             mouse_body = pymunk.Body()
@@ -159,10 +154,14 @@ while 1:
                     button = "1";
                 elif event.type == MOUSEBUTTONUP:
                     button = "2";
-            s.send(split_data[0] + "," + button + "," + str(mpos[0]) + "," + str(mpos[1]))
+            s.send("1" + "," + button + "," + str(mpos[0]) + "," + str(mpos[1]))
 
         if Wii:
             pass
 
         # end mouse stuff
+
+        # draw playes
+        # players positions
+        pygame.display.flip()
 s.close

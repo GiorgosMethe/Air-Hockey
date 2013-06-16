@@ -18,13 +18,13 @@ if len(sys.argv) == 2:
 
 s = socket.socket()         # Create a socket object
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-host = socket.gethostname() # Get local machine name
+host = "10.42.0.13" # Get local machine name
 port = 5402            # Reserve a port for your service.
 s.bind((host, port))        # Bind to the port
 connections = []
 
-WINW=600
-WINH=300
+WINW=1400
+WINH=800
 PI=3.14247
 
 ## Balls
@@ -188,7 +188,8 @@ p2_body.position=(WINW/8, WINH/2)
 p2_shape = pymunk.Circle(p2_body, pradius, (0,0))
 p2_shape.elasticity = 0.95
 
-mouse_body = pymunk.Body()
+mouse_body1 = pymunk.Body()
+mouse_body2 = pymunk.Body()
 joint1=None
 joint2=None
 selected = None
@@ -232,31 +233,55 @@ while running:
         data += "," + str(int(p1_body.position[0])) + "," + str(int(p1_body.position[1]))
         data += "," + str(int(p2_body.position[0])) + "," + str(int(p2_body.position[1]))
         q.send(data)
-        data = q.recv(1024)
-        split_data = data.split(",")
-        if split_data[0] == "0":
-            button = int(split_data[1])
-            mpos = (int(split_data[2]), int(split_data[3]))
-            mouse_body.position = from_pygame( Vec2d(mpos) )
-            mouse_body.angle = 0
-            mouse_body.angular_velocity = 0
-            if joint1 is None:
-                p1_body.position = mouse_body.position
-                joint1 = pymunk.PivotJoint(mouse_body, p1_body, (0,0), (0,0) )
-                space.add(joint1)
-                p1_body.angular_velocity=0
-        elif split_data[0] == "1":
-            button = int(split_data[1])
-            mpos = (int(split_data[2]), int(split_data[3]))
-            mouse_body.position = from_pygame( Vec2d(mpos) )
-            mouse_body.angle = 0
-            mouse_body.angular_velocity = 0
-            if joint2 is None:
-                p2_body.position = mouse_body.position
-                joint2 = pymunk.PivotJoint(mouse_body, p2_body, (0,0), (0,0) )
-                space.add(joint2)
-            p2_body.angular_velocity=0
         i += 1
+
+    data1 = connections[0].recv(1024)
+    split_data1 = data1.split(",")
+    mpos = (int(split_data1[2]), int(split_data1[3]))
+    mouse_body1.position = from_pygame( Vec2d(mpos) )
+    mouse_body1.angle = 0
+    mouse_body1.angular_velocity = 0
+    if joint1 is None:
+        p1_body.position = mouse_body1.position
+        joint1 = pymunk.PivotJoint(mouse_body1, p1_body, (0,0), (0,0) )
+        space.add(joint1)
+        p1_body.angular_velocity=0
+
+    data2 = connections[1].recv(1024)
+    split_data2 = data2.split(",")
+    mpos = (int(split_data2[2]), int(split_data2[3]))
+    mouse_body2.position = from_pygame( Vec2d(mpos) )
+    mouse_body2.angle = 0
+    mouse_body2.angular_velocity = 0
+    if joint2 is None:
+        p2_body.position = mouse_body2.position
+        joint2 = pymunk.PivotJoint(mouse_body2, p2_body, (0,0), (0,0) )
+        space.add(joint2)
+    p2_body.angular_velocity=0
+
+
+    # data1 = q.recv(1024)
+    # split_data1 = data1.split(",")
+    # if split_data1[0] == "0":
+    #     mpos = (int(split_data1[2]), int(split_data1[3]))
+    #     mouse_body.position = from_pygame( Vec2d(mpos) )
+    #     mouse_body.angle = 0
+    #     mouse_body.angular_velocity = 0
+    #     if joint1 is None:
+    #         p1_body.position = mouse_body.position
+    #         joint1 = pymunk.PivotJoint(mouse_body, p1_body, (0,0), (0,0) )
+    #         space.add(joint1)
+    #         p1_body.angular_velocity=0
+    # elif split_data1[0] == "1":
+    #     mpos = (int(split_data1[2]), int(split_data1[3]))
+    #     mouse_body.position = from_pygame( Vec2d(mpos) )
+    #     mouse_body.angle = 0
+    #     mouse_body.angular_velocity = 0
+    #     if joint2 is None:
+    #         p2_body.position = mouse_body.position
+    #         joint2 = pymunk.PivotJoint(mouse_body, p2_body, (0,0), (0,0) )
+    #         space.add(joint2)
+    #     p2_body.angular_velocity=0
 
     # check if players are in the opponments' half
     if p1_body.position[0] < WINW / 2 :
