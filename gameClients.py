@@ -5,6 +5,7 @@ from pygame.color import THECOLORS
 import pymunk
 import socket               # Import socket module
 import sys
+import time
 
 import pgwiimote
 
@@ -124,6 +125,7 @@ if __name__ == "__main__":
         raw_input("Press 1+2 on the Wiimote to connect; then press Enter")
         wiimote = pgwiimote.Wiimote()
         print "Connected! Program exits when the - button is pressed."
+        player_id = -1
 
     pygame.init()
 
@@ -133,6 +135,10 @@ if __name__ == "__main__":
     draw_stuff(balls, score, screen)
 
     s.connect((host, port))
+
+
+    first_time = True
+
     while 1:
         data = s.recv(1024)
         if not data:
@@ -145,14 +151,15 @@ if __name__ == "__main__":
             #take the score
             score['p1'] = int(split_data[1])
             score['p2'] = int(split_data[2])
-            
-            #get player number
-            if Wii:
-                if split_data[0] == "0":
-                    wiimote.set_leds(3)
-                elif split_data[0] == "1":
-                    wiimote.set_leds(12)
 
+            if first_time and Wii:
+                first_time = False
+                time.sleep(0.5)
+                if split_data[0] == "1":
+                    wiimote.set_leds(3)
+                else:
+                    wiimote.set_leds(12)
+            
             if len(balls) == 1:
                 balls.pop()
             #take the ball position
@@ -182,7 +189,6 @@ if __name__ == "__main__":
                 elif pygame.event.peek(MOUSEBUTTONDOWN):
                     button = "2"
             elif Wii:
-                wiimote.set_leds(int(split_data[0]))
                 wiimote_body = pymunk.Body()
                 mpos = wiimote.get_pos()
                 mpos = int(mpos[0] * WINW), int(mpos[1] * WINH)
@@ -196,7 +202,7 @@ if __name__ == "__main__":
                 else:
                     button = "1"
                 if "-" in pressed_buttons:
-                    pygame.event.post(pygame.event.Event(QUIT, None))
+                    pygame.event.post(pygame.event.Event(QUIT, {}))
 
             for event in pygame.event.get():
                 if event.type == QUIT:

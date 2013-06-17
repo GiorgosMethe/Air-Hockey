@@ -49,8 +49,8 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((host, port))        # Bind to the port
 connections = []
 
-WINW=1400
-WINH=800
+WINW=700
+WINH=400
 PI=3.14247
 
 ## Balls
