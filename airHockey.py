@@ -140,7 +140,14 @@ def draw_stuff(balls, space, score, screen):
         if p[0] < 0 or p[0]>WINW:
             addball()
             space.remove(ball)
-            balls.remove(ball)
+            balls.remove(ball)methe@T430 ~/Workspace/Air-Hockey $ git pull
+Updating acc0bb9..4aa9cd8
+Fast-forward
+ airHockey.py   | 81 ++++++++++++++++++++++++++++++++++++++--------------------
+ gameClients.py | 17 ++++++------
+ 2 files changed, 61 insertions(+), 37 deletions(-)
+methe@T430 ~/Workspace/Air-Hockey $ 
+
 
         pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
 
@@ -258,30 +265,6 @@ while running:
         joint2 = pymunk.PivotJoint(mouse_body2, p2_body, (0,0), (0,0) )
         space.add(joint2)
     p2_body.angular_velocity=0
-
-
-    # data1 = q.recv(1024)
-    # split_data1 = data1.split(",")
-    # if split_data1[0] == "0":
-    #     mpos = (int(split_data1[2]), int(split_data1[3]))
-    #     mouse_body.position = from_pygame( Vec2d(mpos) )
-    #     mouse_body.angle = 0
-    #     mouse_body.angular_velocity = 0
-    #     if joint1 is None:
-    #         p1_body.position = mouse_body.position
-    #         joint1 = pymunk.PivotJoint(mouse_body, p1_body, (0,0), (0,0) )
-    #         space.add(joint1)
-    #         p1_body.angular_velocity=0
-    # elif split_data1[0] == "1":
-    #     mpos = (int(split_data1[2]), int(split_data1[3]))
-    #     mouse_body.position = from_pygame( Vec2d(mpos) )
-    #     mouse_body.angle = 0
-    #     mouse_body.angular_velocity = 0
-    #     if joint2 is None:
-    #         p2_body.position = mouse_body.position
-    #         joint2 = pymunk.PivotJoint(mouse_body, p2_body, (0,0), (0,0) )
-    #         space.add(joint2)
-    #     p2_body.angular_velocity=0
 
     # check if players are in the opponments' half
     if p1_body.position[0] < WINW / 2 :
