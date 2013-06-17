@@ -162,7 +162,6 @@ def draw_stuff(balls, space, score, screen):
             space.remove(ball)
             balls.remove(ball)
         pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
-
     pygame.display.flip()
     pygame.display.set_caption("Wii-AWESOME AIR HOCKEY")
     draw_score()
