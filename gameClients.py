@@ -5,7 +5,6 @@ from pygame.color import THECOLORS
 import pymunk
 import socket               # Import socket module
 import sys
-import time
 
 import pgwiimote
 
@@ -125,7 +124,6 @@ if __name__ == "__main__":
         raw_input("Press 1+2 on the Wiimote to connect; then press Enter")
         wiimote = pgwiimote.Wiimote()
         print "Connected! Program exits when the - button is pressed."
-        player_id = -1
 
     pygame.init()
 
@@ -154,7 +152,6 @@ if __name__ == "__main__":
 
             if first_time and Wii:
                 first_time = False
-                time.sleep(0.5)
                 if split_data[0] == "1":
                     wiimote.set_leds(3)
                 else:
