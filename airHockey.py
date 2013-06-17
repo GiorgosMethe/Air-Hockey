@@ -1,3 +1,23 @@
+"""
+AIR HOCKEY
+Server-client architecture
+Control the players with Wii or Mouse controls.
+Forked Repository: git://github.com/robogeek42/Air-Hockey.git
+Added Functionalities:
+* Improved Graphics
+* Network gaming
+* Two player mode
+* Wii controller integration (Rumble mode)
+* Adaptive ball physics
+* Scalable window sizew
+
+Authors:
+Methenitis Georgios 10407537
+Patrick de Kok ~
+Amogh Gudi ~
+"""
+
+
 import pygame
 from pygame.locals import *
 from pygame.color import *
@@ -140,15 +160,7 @@ def draw_stuff(balls, space, score, screen):
         if p[0] < 0 or p[0]>WINW:
             addball()
             space.remove(ball)
-            balls.remove(ball)methe@T430 ~/Workspace/Air-Hockey $ git pull
-Updating acc0bb9..4aa9cd8
-Fast-forward
- airHockey.py   | 81 ++++++++++++++++++++++++++++++++++++++--------------------
- gameClients.py | 17 ++++++------
- 2 files changed, 61 insertions(+), 37 deletions(-)
-methe@T430 ~/Workspace/Air-Hockey $ 
-
-
+            balls.remove(ball)
         pygame.draw.circle(screen, THECOLORS["black"], p, int(ball.radius), 0)
 
     pygame.display.flip()
