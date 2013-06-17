@@ -27,6 +27,9 @@ class Wiimote(object):
         self.pos_old_pos = (0, 0, False) 
         self.__thread = None
 
+    def set_leds(self, bitmask):
+        self.__wiimote.led = bitmask
+
     def get_pressed(self):
         button_state = self.__wiimote.state['buttons']
         is_pressed = {}
