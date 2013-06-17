@@ -29,17 +29,23 @@ import socket               # Import socket module
 print 'Number of arguments:', len(sys.argv), 'arguments.'
 print 'Argument List:', str(sys.argv)
 
+host = "10.42.0.13" # Get local machine name
+port = 5402            # Reserve a port for your service.
+
 RENDERING = False
-if len(sys.argv) == 2:
-    if str(sys.argv[1]) == "rendering=true":
+for arg in sys.argv:
+    arg = arg.lower()
+    if arg == "rendering=true":
         RENDERING = True
-    if str(sys.argv[1]) == "rendering=false":
+    if arg == "rendering=false":
         RENDERING = False
+    if arg.startswith("host="):
+        host = arg.split("host=")[1]
+    if arg.startswith("port="):
+        port = arg.split("port=")[1]
 
 s = socket.socket()         # Create a socket object
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-host = "10.42.0.13" # Get local machine name
-port = 5402            # Reserve a port for your service.
 s.bind((host, port))        # Bind to the port
 connections = []
 
